@@ -2,7 +2,10 @@ import { likeIdea } from "./likeFunctions";
 import { login, updateUserSettings } from "./userFunctions";
 import { voteIdea } from "./voteFunctions";
 import { scheduleDeleteDownvotedIdeas } from "./scheduledFunctions";
-import { generateIdeaContent } from "./generateIdeaFunctions";
+import {
+  generateIdeaContent,
+  generateNewIdeaImage,
+} from "./generateIdeaFunctions";
 
 export {
   likeIdea,
@@ -11,4 +14,5 @@ export {
   updateUserSettings,
   scheduleDeleteDownvotedIdeas,
   generateIdeaContent,
+  generateNewIdeaImage,
 };

@@ -126,3 +126,69 @@ const getSearchKeyWords = (title: string, description: string) => {
     natural.PorterStemmer.stem(keyword)
   );
 };
+
+export const generateNewIdeaImage = functions.https.onRequest(
+  async (req, res) => {
+    cors(req, res, async () => {
+      const data = req.body;
+      const userId = data.userId;
+      const ideaId = data.ideaId; // Fixed typo from ideadId to ideaId
+
+      if (!userId || !ideaId) {
+        res.status(400).send("Missing required data");
+        return;
+      }
+
+      // Check if a user document already exists in Firestore
+      const userRef = admin.firestore().collection("users").doc(userId);
+      const userSnapshot = await userRef.get();
+
+      // Check if an idea document already exists in Firestore
+      const ideaRef = admin.firestore().collection("ideas").doc(ideaId);
+      const ideaSnapshot = await ideaRef.get();
+
+      if (!ideaSnapshot.exists || !userSnapshot.exists) {
+        res.status(400).send("User or Idea does not exist");
+        return;
+      }
+
+      const ideaData = ideaSnapshot.data()!;
+
+      // Check if the idea belongs to the user
+      if (ideaData.user_id !== userId) {
+        res.status(401).send("Unauthorized");
+        return;
+      }
+
+      const url = await regenerateImageUrl(ideaData.title);
+
+      await ideaRef.update({
+        url: url,
+      });
+
+      res.status(200).send({
+        message: `New image for Idea ${ideaId} was successfully generated`,
+      });
+    });
+  }
+);
+
+const regenerateImageUrl = async (title: string): Promise<string> => {
+  const extractedKeywords = keywordExtractor.extract(title, {
+    language: "english",
+    remove_digits: true,
+    return_changed_case: true,
+    remove_duplicates: true,
+  });
+
+  // Shuffle the extractedKeywords array
+  const shuffledKeywords = extractedKeywords.sort(() => Math.random() - 0.5);
+
+  const queryUrl = `https://source.unsplash.com/1600x900/?${encodeURIComponent(
+    shuffledKeywords.join(",")
+  )}`;
+
+  const data = await fetch(queryUrl);
+  console.log(data.url);
+  return data.url;
+};
