@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
+import admin from "firebase-admin";
 import { cors } from "./config";
 
 export const likeIdea = functions.https.onRequest(async (req, res) => {

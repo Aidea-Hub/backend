@@ -16,5 +16,12 @@ Run in debug mode for functions
 
 ```
 cd backend/functions
-npm run serve:debug
+npm run serve
+```
+
+To deploy
+
+```
+npm run build
+npm run deploy
 ```

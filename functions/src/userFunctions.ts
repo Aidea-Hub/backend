@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
+import admin from "firebase-admin";
 import { FieldValue } from "@google-cloud/firestore";
 import { cors } from "./config";
 
@@ -31,6 +31,7 @@ export const login = functions.https.onRequest(async (req, res) => {
         created_at: FieldValue.serverTimestamp(),
         liked_ideas: [],
         votes: {},
+        credits: 0,
         theme: "yellow",
         is_plus: false,
       };

@@ -1,5 +1,5 @@
-import * as corsLib from "cors";
-import * as admin from "firebase-admin";
+import corsLib from "cors";
+import admin from "firebase-admin";
 
 admin.initializeApp();
 const allowedOrigins = ["http://localhost:3000"];
