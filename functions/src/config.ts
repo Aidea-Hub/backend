@@ -2,7 +2,10 @@ import corsLib from "cors";
 import admin from "firebase-admin";
 
 admin.initializeApp();
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://aidea-hub.netlify.app",
+];
 
 export const cors = corsLib({
   origin: (origin, callback) => {
