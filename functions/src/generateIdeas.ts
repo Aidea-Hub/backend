@@ -1,8 +1,6 @@
 import * as functions from "firebase-functions";
 import admin from "firebase-admin";
 import { cors } from "./config";
-import keywordExtractor from "keyword-extractor";
-import natural from "natural";
 
 // API definition
 // POST /generateIdeas
@@ -96,21 +94,39 @@ export const generateIdeas = functions.https.onRequest(
   }
 );
 
+const DUMMY_IDEAS = [
+  {
+    title: "Idea 1",
+    description: "This is idea 1",
+    algo: "algo1"
+  },
+  {
+    title: "Idea 2",
+    description: "This is idea 2",
+    algo: "algo2"
+  },
+  {
+    title: "Idea 3",
+    description: "This is idea 3",
+    algo: "algo3"
+  },
+]
+
 // Used to generate more ideas if user chose a solution and algo
 const generateMoreIdeas = async (solution: string, algo: string, numIdeas: number): Promise<IdeaResp[]> => {
   // TODO
-  return [];
+  return DUMMY_IDEAS;
 }
 
 // Used to generate initial set of ideas given user's problem
 const generateNewIdeas = async (problem: string): Promise<IdeaResp[]> => {
-  return [];
+  return DUMMY_IDEAS;
 }
 
 // Get url from algo
-const getUrlFromAlgo = async (algo: string) => {
-  return algoUrlMap[algo];
-}
+// const getUrlFromAlgo = async (algo: string) => {
+//   return algoUrlMap[algo];
+// }
 
 // Returns a random number between min (included) and max (excluded)
 const getRndInteger = (min: number, max: number) => {
