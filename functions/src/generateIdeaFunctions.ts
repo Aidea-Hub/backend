@@ -31,8 +31,18 @@ const generateReflection = async (
       description,
     });
     return response.data.response;
-  } catch (error) {
-    console.error("Error making API call:", error);
+  } catch (error: any) {
+    if (error.response) {
+      // The request was made and the server responded with a status code that falls out of the range of 2xx
+      console.error("Response Error:", error.response.data);
+      console.error("Response Status:", error.response.status);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error("No Response:", error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("Request Error:", error.message);
+    }
     return "Failed to generate response, please contact us on Discord for assistance.";
   }
 };
@@ -54,12 +64,16 @@ const productCapabilitiesPrompt =
 const productCapabilitiesFormat = `Product Capabilities: <List of product capabilities, elaborating on each product capability>
 Conclusion: <Conclusion of product capabilities>
 `;
+const productCabpabilitiesStart = "Product Capabilities:";
+
+const competitiveLandscapeStart = "1. Problem Space and Market Competition";
 
 const moatPrompt =
   "For the given product idea, identify 2 to 3 potential moats or sustainable competitive advantages. These moats should protect its market position, deter new entrants, and prevent existing competitors from replicating its success. Example: One of Apple's moat is its integrated ecosystem of products. Apple's products, from iPhone, Macs, and services like iCloud, are tightly integrated into a single ecosystem, creating a seamless user experience that is difficult for competitors to match. This tight integration also makes it difficult for consumers to switch out of Apple.";
 const moatFormat = `Moat: <List of moats, elaborating on each moat>
 Conclusion: <Conclusion of moats>
 `;
+const moatStart = "Moat:";
 
 const productLifecyclePrompt =
   "For the given product idea it is in the introduction stage. Outline its journey through the product life cycle. Highlight challenges and strategies for each stage and how to achieve product-market fit during growth. Emphasize user acquisition tactics in the introduction and their evolution in later stages.";
@@ -86,6 +100,7 @@ Decline Stage:
 Conclusion:
 - Summary: <Brief overview of the product's lifecycle journey>
 `;
+const productLifecycleStart = "Introduction Stage:";
 
 const businessModelPrompt =
   "For the following idea, outline a monetization and pricing strategy considering costs, value, and competition. Emphasize the suitability of the strategy for the product's stage, target users, and problem space. Discuss potential revenue streams and factors influencing pricing decisions.";
@@ -110,6 +125,7 @@ Conclusion:
 - Strategy Justification: <Why the chosen pricing strategy is suitable for target users and problem space>
 - Influencing Factors: <Factors that influenced the pricing decisions, such as production costs, perceived value, competition>
 `;
+const businessModelStart = "Cost-Based Pricing:";
 
 const brandingPrompt =
   "For the following idea, define a compelling brand identity by suggesting a product name and designing a logo. Consider factors like name length, reproducibility, domain availability, cultural references, and potential resemblances. Discuss the rationale behind the name, potential alternatives, and the significance of the chosen logo.";
@@ -129,6 +145,7 @@ Conclusion:
 - Brand Identity Justification: <Why the chosen name and logo best represent the product's identity>
 - Potential Impact: <How this branding might influence the product's perception and recognition in the market>
 `;
+const brandingFormatStart = "Product Name:";
 
 const uiuxPrompt =
   "Given a product's details, define both the user experience (UX) and user interface (UI). Describe key workflows for optimal user interaction and the rationale behind their design. Highlight UI considerations tailored to specific features and functionalities. Reflect on transparency, ethics, privacy, and user empowerment, especially in decision-making features. Discuss design prototypes and the final design choices.";
@@ -151,6 +168,8 @@ User Interface Considerations:
 Conclusion:
 - Overall Strategy: <Summary of the holistic design strategy for both UX and UI>
 `;
+const uiuxFormatStart = "Sample Key Workflows:";
+
 // To be called once the idea's title and description is decided
 export const generateIdeaContent = functions
   .runWith({
@@ -246,49 +265,71 @@ const handleIdeaContentGeneration = async (
   const updates = {} as any;
 
   if (ideaContent.productCapabilities === LOADING) {
-    updates.productCapabilities = await generateReflection(
+    const productCapabilities = await generateReflection(
       title,
       description,
       productCapabilitiesPrompt,
       productCapabilitiesFormat
     );
+    updates.productCapabilities = extractContentFromResponse(
+      productCapabilities,
+      productCabpabilitiesStart
+    );
   } else if (ideaContent.competitiveLandscape === LOADING) {
-    updates.competitiveLandscape = await generateResearch(description);
+    const competitiveLandscape = await generateResearch(description);
+    updates.competitiveLandscape = extractContentFromResponse(
+      competitiveLandscape,
+      competitiveLandscapeStart
+    );
   } else if (ideaContent.moat === LOADING) {
-    updates.moat = await generateReflection(
+    const moat = await generateReflection(
       title,
       description,
       moatPrompt,
       moatFormat
     );
+    updates.moat = extractContentFromResponse(moat, moatStart);
   } else if (ideaContent.productLifecycle === LOADING) {
-    updates.productLifecycle = await generateReflection(
+    const productLifecycle = await generateReflection(
       title,
       description,
       productLifecyclePrompt,
       productLifecycleFormat
     );
+    updates.productLifecycle = extractContentFromResponse(
+      productLifecycle,
+      productLifecycleStart
+    );
   } else if (ideaContent.businessModel === LOADING) {
-    updates.businessModel = await generateReflection(
+    const businessModel = await generateReflection(
       title,
       description,
       businessModelPrompt,
       businessModelFormat
     );
+    updates.businessModel = extractContentFromResponse(
+      businessModel,
+      businessModelStart
+    );
   } else if (ideaContent.branding === LOADING) {
-    updates.branding = await generateReflection(
+    const branding = await generateReflection(
       title,
       description,
       brandingPrompt,
       brandingFormat
     );
+    updates.branding = extractContentFromResponse(
+      branding,
+      brandingFormatStart
+    );
   } else {
-    updates.uiux = await generateReflection(
+    const uiux = await generateReflection(
       title,
       description,
       uiuxPrompt,
       uiuxFormat
     );
+    updates.uiux = extractContentFromResponse(uiux, uiuxFormatStart);
     // Mark as completed since all content has been generated
     updates.status = STATUS.COMPLETED;
   }
@@ -296,6 +337,16 @@ const handleIdeaContentGeneration = async (
   console.log("Updating: " + JSON.stringify(updates));
 
   await snapshot.ref.update(updates);
+};
+
+const extractContentFromResponse = (
+  responseText: string,
+  startText: string
+): string => {
+  const startIndex = responseText.indexOf(startText);
+  // Return original text if startText not found
+  if (startIndex === -1) return responseText;
+  return responseText.substring(startIndex);
 };
 
 export const generateIdeaContentOnCreate = functions
