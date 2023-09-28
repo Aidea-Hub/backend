@@ -10,6 +10,13 @@ const COST_TO_GENERATE_IDEA = 10;
 const API_REFLECTION_URL = process.env.API_GENERATE_REFLECTION || "";
 const API_RESEARCH_URL = process.env.API_GENERATE_RESEARCH || "";
 
+const loading = "Generating...";
+
+const STATUS = {
+  GENERATING: "GENERATING",
+  COMPLETED: "COMPLETED",
+};
+
 const generateReflection = async (
   title: string,
   description: string,
@@ -199,43 +206,6 @@ export const generateIdeaContent = functions
 
       const ideaId = ideaRef.id;
 
-      const results = await Promise.all([
-        generateReflection(
-          title,
-          description,
-          productCapabilitiesPrompt,
-          productCapabilitiesFormat
-        ),
-        generateResearch(description),
-        generateReflection(title, description, moatPrompt, moatFormat),
-        generateReflection(
-          title,
-          description,
-          productLifecyclePrompt,
-          productLifecycleFormat
-        ),
-        generateReflection(
-          title,
-          description,
-          businessModelPrompt,
-          businessModelFormat
-        ),
-        generateReflection(title, description, brandingPrompt, brandingFormat),
-        generateReflection(title, description, uiuxPrompt, uiuxFormat),
-      ]);
-
-      console.log("Completed generation of results:", results);
-
-      const [
-        productCapabilities,
-        competitiveLandscape,
-        moat,
-        productLifecycle,
-        businessModel,
-        branding,
-        uiux,
-      ] = results;
-
       // Create a new content document in the "idea_contents" collection
       const ideaContentRef = admin
         .firestore()
@@ -243,19 +213,100 @@ export const generateIdeaContent = functions
         .doc();
       await ideaContentRef.set({
         idea_id: ideaId,
-        productCapabilities: productCapabilities,
-        competitiveLandscape: competitiveLandscape,
-        moat: moat,
-        productLifecycle: productLifecycle,
-        businessModel: businessModel,
-        branding: branding,
-        uiux: uiux,
+        title: title,
+        description: description,
+        status: STATUS.GENERATING,
+        productCapabilities: loading,
+        competitiveLandscape: loading,
+        moat: loading,
+        productLifecycle: loading,
+        businessModel: loading,
+        branding: loading,
+        uiux: loading,
       });
 
       res.status(200).send({
         message: `Idea ${ideaId} and its content were successfully created`,
       });
     });
+  });
+
+// Sequential generation of idea content
+const handleIdeaContentGeneration = async (
+  snapshot: admin.firestore.DocumentSnapshot
+) => {
+  const ideaContent = snapshot.data()!;
+  const { title, description } = ideaContent;
+
+  if (ideaContent.status === STATUS.COMPLETED) {
+    return;
+  }
+
+  const updates = {} as any;
+
+  if (ideaContent.productCapabilities === loading) {
+    updates.productCapabilities = await generateReflection(
+      title,
+      description,
+      productCapabilitiesPrompt,
+      productCapabilitiesFormat
+    );
+    updates.competitiveLandscape = await generateResearch(description);
+  } else if (ideaContent.moat === loading) {
+    updates.moat = await generateReflection(
+      title,
+      description,
+      moatPrompt,
+      moatFormat
+    );
+  } else if (ideaContent.productLifecycle === loading) {
+    updates.productLifecycle = await generateReflection(
+      title,
+      description,
+      productLifecyclePrompt,
+      productLifecycleFormat
+    );
+  } else if (ideaContent.businessModel === loading) {
+    updates.businessModel = await generateReflection(
+      title,
+      description,
+      businessModelPrompt,
+      businessModelFormat
+    );
+  } else if (ideaContent.branding === loading) {
+    updates.branding = await generateReflection(
+      title,
+      description,
+      brandingPrompt,
+      brandingFormat
+    );
+  } else {
+    updates.uiux = await generateReflection(
+      title,
+      description,
+      uiuxPrompt,
+      uiuxFormat
+    );
+    // Mark as completed since all content has been generated
+    updates.status = STATUS.COMPLETED;
+  }
+
+  console.log("Updating: " + JSON.stringify(updates));
+
+  await snapshot.ref.update(updates);
+};
+
+export const generateIdeaContentOnCreate = functions.firestore
+  .document("idea_contents/{docId}")
+  .onCreate((snapshot, context) => {
+    return handleIdeaContentGeneration(snapshot);
+  });
+
+export const generateIdeaContentOnUpdate = functions.firestore
+  .document("idea_contents/{docId}")
+  .onUpdate((change, context) => {
+    // Use 'after' snapshot to get the current data
+    return handleIdeaContentGeneration(change.after);
   });
 
 const generateImageUrl = async (title: string): Promise<string> => {
