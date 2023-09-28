@@ -10,7 +10,7 @@ const COST_TO_GENERATE_IDEA = 10;
 const API_REFLECTION_URL = process.env.API_GENERATE_REFLECTION || "";
 const API_RESEARCH_URL = process.env.API_GENERATE_RESEARCH || "";
 
-const loading = "Generating...";
+const LOADING = "";
 
 const STATUS = {
   GENERATING: "GENERATING",
@@ -216,17 +216,18 @@ export const generateIdeaContent = functions
         title: title,
         description: description,
         status: STATUS.GENERATING,
-        productCapabilities: loading,
-        competitiveLandscape: loading,
-        moat: loading,
-        productLifecycle: loading,
-        businessModel: loading,
-        branding: loading,
-        uiux: loading,
+        productCapabilities: LOADING,
+        competitiveLandscape: LOADING,
+        moat: LOADING,
+        productLifecycle: LOADING,
+        businessModel: LOADING,
+        branding: LOADING,
+        uiux: LOADING,
       });
 
       res.status(200).send({
         message: `Idea ${ideaId} and its content were successfully created`,
+        ideaId: ideaId,
       });
     });
   });
@@ -244,37 +245,37 @@ const handleIdeaContentGeneration = async (
 
   const updates = {} as any;
 
-  if (ideaContent.productCapabilities === loading) {
+  if (ideaContent.productCapabilities === LOADING) {
     updates.productCapabilities = await generateReflection(
       title,
       description,
       productCapabilitiesPrompt,
       productCapabilitiesFormat
     );
-  } else if (ideaContent.competitiveLandscape === loading) {
+  } else if (ideaContent.competitiveLandscape === LOADING) {
     updates.competitiveLandscape = await generateResearch(description);
-  } else if (ideaContent.moat === loading) {
+  } else if (ideaContent.moat === LOADING) {
     updates.moat = await generateReflection(
       title,
       description,
       moatPrompt,
       moatFormat
     );
-  } else if (ideaContent.productLifecycle === loading) {
+  } else if (ideaContent.productLifecycle === LOADING) {
     updates.productLifecycle = await generateReflection(
       title,
       description,
       productLifecyclePrompt,
       productLifecycleFormat
     );
-  } else if (ideaContent.businessModel === loading) {
+  } else if (ideaContent.businessModel === LOADING) {
     updates.businessModel = await generateReflection(
       title,
       description,
       businessModelPrompt,
       businessModelFormat
     );
-  } else if (ideaContent.branding === loading) {
+  } else if (ideaContent.branding === LOADING) {
     updates.branding = await generateReflection(
       title,
       description,
