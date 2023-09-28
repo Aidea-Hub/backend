@@ -6,6 +6,7 @@ import {
   generateIdeaContent,
   generateNewIdeaImage,
 } from "./generateIdeaFunctions";
+import { generateIdeas } from "./generateIdeas";
 
 export {
   likeIdea,
@@ -15,4 +16,5 @@ export {
   scheduleDeleteDownvotedIdeas,
   generateIdeaContent,
   generateNewIdeaImage,
+  generateIdeas,
 };
