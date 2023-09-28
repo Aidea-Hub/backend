@@ -8,6 +8,12 @@ import {
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
 } from "./generateIdeaFunctions";
+import{
+  subscribe
+} from "./subscribe";
+import {
+  topupCredits
+} from "./topupFunctions";
 
 export {
   likeIdea,
@@ -19,4 +25,6 @@ export {
   generateNewIdeaImage,
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
+  subscribe,
+  topupCredits
 };
