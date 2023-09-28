@@ -251,6 +251,7 @@ const handleIdeaContentGeneration = async (
       productCapabilitiesPrompt,
       productCapabilitiesFormat
     );
+  } else if (ideaContent.competitiveLandscape === loading) {
     updates.competitiveLandscape = await generateResearch(description);
   } else if (ideaContent.moat === loading) {
     updates.moat = await generateReflection(
@@ -296,15 +297,23 @@ const handleIdeaContentGeneration = async (
   await snapshot.ref.update(updates);
 };
 
-export const generateIdeaContentOnCreate = functions.firestore
-  .document("idea_contents/{docId}")
+export const generateIdeaContentOnCreate = functions
+  .runWith({
+    timeoutSeconds: 300,
+  })
+  .firestore.document("idea_contents/{docId}")
   .onCreate((snapshot, context) => {
+    console.log("onCreate Generating idea content");
     return handleIdeaContentGeneration(snapshot);
   });
 
-export const generateIdeaContentOnUpdate = functions.firestore
-  .document("idea_contents/{docId}")
+export const generateIdeaContentOnUpdate = functions
+  .runWith({
+    timeoutSeconds: 300,
+  })
+  .firestore.document("idea_contents/{docId}")
   .onUpdate((change, context) => {
+    console.log("onUpdate Generating idea content");
     // Use 'after' snapshot to get the current data
     return handleIdeaContentGeneration(change.after);
   });
