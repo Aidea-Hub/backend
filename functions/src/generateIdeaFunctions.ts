@@ -65,7 +65,8 @@ const generateResearch = async (description: string) => {
 
 const productCapabilitiesPrompt =
   "For the following idea, suggest 10 of the most useful and innovative product capabilities. Avoid the common pitfall of failing to consider how the product serves the problem in the process. Consider if the product have the capabilities to succeed in the chosen problem space.";
-const productCapabilitiesFormat = `Product Capabilities: <List of product capabilities, elaborating on each product capability>
+const productCapabilitiesFormat = `Product Capabilities: 
+- <List of product capabilities, elaborating on each product capability>
 Conclusion: <Conclusion of product capabilities>
 `;
 const productCabpabilitiesStart = "Product Capabilities:";
@@ -74,7 +75,8 @@ const competitiveLandscapeStart = "1. Problem Space and Market Competition";
 
 const moatPrompt =
   "For the given product idea, identify 2 to 3 potential moats or sustainable competitive advantages. These moats should protect its market position, deter new entrants, and prevent existing competitors from replicating its success. Example: One of Apple's moat is its integrated ecosystem of products. Apple's products, from iPhone, Macs, and services like iCloud, are tightly integrated into a single ecosystem, creating a seamless user experience that is difficult for competitors to match. This tight integration also makes it difficult for consumers to switch out of Apple.";
-const moatFormat = `Moat: <List of moats, elaborating on each moat>
+const moatFormat = `Moat: 
+- <List of moats, elaborating on each moat>
 Conclusion: <Conclusion of moats>
 `;
 const moatStart = "Moat:";
@@ -424,7 +426,9 @@ const isBadResponse = (parsedText: string, startText: string): boolean => {
     return true;
   }
   const refuseToAnswerIndex = parsedText.indexOf(REFUSE_TO_ANSWER);
-  return startIndex === -1 || refuseToAnswerIndex !== -1;
+  // limit bad responses to just those who refuse to answer for now
+  console.log("RETRYING FOR : " + startText);
+  return refuseToAnswerIndex !== -1 || startIndex === -1;
 };
 
 export const generateIdeaContentOnCreate = functions
