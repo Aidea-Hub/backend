@@ -185,7 +185,7 @@ export const generateIdeaContent = functions
       const userId = data.userId;
       const title = data.title;
       const description = data.description;
-      const problem = data.problem;
+      const problem = data.problem || "";
 
       if (!userId || !title || !description) {
         res.status(400).send("Missing required data");
@@ -534,7 +534,7 @@ export const updateIdeaVisibility = functions.https.onRequest(
       const ideaId = data.ideaId;
       const isPublic = data.isPublic;
 
-      if (!userId || !ideaId) {
+      if (!userId || !ideaId || isPublic === undefined) {
         res.status(400).send("Missing required data");
         return;
       }
