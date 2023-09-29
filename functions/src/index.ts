@@ -7,6 +7,7 @@ import {
   generateNewIdeaImage,
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
+  updateIdeaVisibility,
 } from "./generateIdeaFunctions";
 
 export {
@@ -19,4 +20,5 @@ export {
   generateNewIdeaImage,
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
+  updateIdeaVisibility,
 };
