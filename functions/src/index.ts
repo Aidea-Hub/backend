@@ -7,6 +7,7 @@ import {
   generateNewIdeaImage,
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
+  updateIdeaVisibility,
 } from "./generateIdeaFunctions";
 import{
   subscribe
@@ -28,6 +29,7 @@ export {
   generateNewIdeaImage,
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
+  updateIdeaVisibility,
   subscribe,
   topupCredits,
   createCheckoutSession

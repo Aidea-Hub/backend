@@ -6,6 +6,10 @@ import natural from "natural";
 import axios from "axios";
 
 const COST_TO_GENERATE_IDEA = 10;
+const MAX_RETRIES = 3;
+const ERROR_MESSAGE =
+  "Failed to generate response, please contact us on Discord for assistance.";
+const REFUSE_TO_ANSWER = "AI language model";
 
 const API_REFLECTION_URL = process.env.API_GENERATE_REFLECTION || "";
 const API_RESEARCH_URL = process.env.API_GENERATE_RESEARCH || "";
@@ -43,7 +47,7 @@ const generateReflection = async (
       // Something happened in setting up the request that triggered an Error
       console.error("Request Error:", error.message);
     }
-    return "Failed to generate response, please contact us on Discord for assistance.";
+    return ERROR_MESSAGE;
   }
 };
 
@@ -61,7 +65,8 @@ const generateResearch = async (description: string) => {
 
 const productCapabilitiesPrompt =
   "For the following idea, suggest 10 of the most useful and innovative product capabilities. Avoid the common pitfall of failing to consider how the product serves the problem in the process. Consider if the product have the capabilities to succeed in the chosen problem space.";
-const productCapabilitiesFormat = `Product Capabilities: <List of product capabilities, elaborating on each product capability>
+const productCapabilitiesFormat = `Product Capabilities: 
+- <List of product capabilities, elaborating on each product capability>
 Conclusion: <Conclusion of product capabilities>
 `;
 const productCabpabilitiesStart = "Product Capabilities:";
@@ -70,7 +75,8 @@ const competitiveLandscapeStart = "1. Problem Space and Market Competition";
 
 const moatPrompt =
   "For the given product idea, identify 2 to 3 potential moats or sustainable competitive advantages. These moats should protect its market position, deter new entrants, and prevent existing competitors from replicating its success. Example: One of Apple's moat is its integrated ecosystem of products. Apple's products, from iPhone, Macs, and services like iCloud, are tightly integrated into a single ecosystem, creating a seamless user experience that is difficult for competitors to match. This tight integration also makes it difficult for consumers to switch out of Apple.";
-const moatFormat = `Moat: <List of moats, elaborating on each moat>
+const moatFormat = `Moat: 
+- <List of moats, elaborating on each moat>
 Conclusion: <Conclusion of moats>
 `;
 const moatStart = "Moat:";
@@ -181,6 +187,7 @@ export const generateIdeaContent = functions
       const userId = data.userId;
       const title = data.title;
       const description = data.description;
+      const problem = data.problem || "";
 
       if (!userId || !title || !description) {
         res.status(400).send("Missing required data");
@@ -217,9 +224,11 @@ export const generateIdeaContent = functions
         created_at: admin.firestore.FieldValue.serverTimestamp(),
         description: description,
         keywords: getSearchKeyWords(title, description),
+        problem: problem,
         title: title,
         url: url,
         user_id: userId,
+        isPublic: true,
         votes: 0,
       });
 
@@ -235,6 +244,7 @@ export const generateIdeaContent = functions
         title: title,
         description: description,
         status: STATUS.GENERATING,
+        retries: 0,
         productCapabilities: LOADING,
         competitiveLandscape: LOADING,
         moat: LOADING,
@@ -256,7 +266,7 @@ const handleIdeaContentGeneration = async (
   snapshot: admin.firestore.DocumentSnapshot
 ) => {
   const ideaContent = snapshot.data()!;
-  const { title, description } = ideaContent;
+  const { title, description, retries } = ideaContent;
 
   if (ideaContent.status === STATUS.COMPLETED) {
     return;
@@ -271,16 +281,34 @@ const handleIdeaContentGeneration = async (
       productCapabilitiesPrompt,
       productCapabilitiesFormat
     );
-    updates.productCapabilities = extractContentFromResponse(
+    const extractedProductCapabilities = extractContentFromResponse(
       productCapabilities,
       productCabpabilitiesStart
     );
+    updates.productCapabilities = extractedProductCapabilities;
+    // Retry if response is bad
+    if (
+      isBadResponse(extractedProductCapabilities, productCabpabilitiesStart) &&
+      retries < MAX_RETRIES
+    ) {
+      updates.retries = retries + 1;
+      updates.productCapabilities = LOADING;
+    }
   } else if (ideaContent.competitiveLandscape === LOADING) {
     const competitiveLandscape = await generateResearch(description);
-    updates.competitiveLandscape = extractContentFromResponse(
+    const extractedCompetitiveLandscape = extractContentFromResponse(
       competitiveLandscape,
       competitiveLandscapeStart
     );
+    updates.competitiveLandscape = extractedCompetitiveLandscape;
+    // Retry if response is bad
+    if (
+      isBadResponse(extractedCompetitiveLandscape, competitiveLandscapeStart) &&
+      retries < MAX_RETRIES
+    ) {
+      updates.retries = retries + 1;
+      updates.competitiveLandscape = LOADING;
+    }
   } else if (ideaContent.moat === LOADING) {
     const moat = await generateReflection(
       title,
@@ -288,7 +316,13 @@ const handleIdeaContentGeneration = async (
       moatPrompt,
       moatFormat
     );
-    updates.moat = extractContentFromResponse(moat, moatStart);
+    const extractedMoat = extractContentFromResponse(moat, moatStart);
+    updates.moat = extractedMoat;
+    // Retry if response is bad
+    if (isBadResponse(extractedMoat, moatStart) && retries < MAX_RETRIES) {
+      updates.retries = retries + 1;
+      updates.moat = LOADING;
+    }
   } else if (ideaContent.productLifecycle === LOADING) {
     const productLifecycle = await generateReflection(
       title,
@@ -296,10 +330,19 @@ const handleIdeaContentGeneration = async (
       productLifecyclePrompt,
       productLifecycleFormat
     );
-    updates.productLifecycle = extractContentFromResponse(
+    const extractedProductLifecycle = extractContentFromResponse(
       productLifecycle,
       productLifecycleStart
     );
+    updates.productLifecycle = extractedProductLifecycle;
+    // Retry if response is bad
+    if (
+      isBadResponse(extractedProductLifecycle, productCabpabilitiesStart) &&
+      retries < MAX_RETRIES
+    ) {
+      updates.retries = retries + 1;
+      updates.productLifecycle = LOADING;
+    }
   } else if (ideaContent.businessModel === LOADING) {
     const businessModel = await generateReflection(
       title,
@@ -307,10 +350,19 @@ const handleIdeaContentGeneration = async (
       businessModelPrompt,
       businessModelFormat
     );
-    updates.businessModel = extractContentFromResponse(
+    const extractedBusinessModel = extractContentFromResponse(
       businessModel,
       businessModelStart
     );
+    updates.businessModel = extractedBusinessModel;
+    // Retry if response is bad
+    if (
+      isBadResponse(extractedBusinessModel, brandingFormatStart) &&
+      retries < MAX_RETRIES
+    ) {
+      updates.retries = retries + 1;
+      updates.businessModel = LOADING;
+    }
   } else if (ideaContent.branding === LOADING) {
     const branding = await generateReflection(
       title,
@@ -318,10 +370,19 @@ const handleIdeaContentGeneration = async (
       brandingPrompt,
       brandingFormat
     );
-    updates.branding = extractContentFromResponse(
+    const extractedBranding = extractContentFromResponse(
       branding,
       brandingFormatStart
     );
+    updates.branding = extractedBranding;
+    // Retry if response is bad
+    if (
+      isBadResponse(extractedBranding, brandingFormatStart) &&
+      retries < MAX_RETRIES
+    ) {
+      updates.retries = retries + 1;
+      updates.branding = LOADING;
+    }
   } else {
     const uiux = await generateReflection(
       title,
@@ -329,9 +390,19 @@ const handleIdeaContentGeneration = async (
       uiuxPrompt,
       uiuxFormat
     );
-    updates.uiux = extractContentFromResponse(uiux, uiuxFormatStart);
-    // Mark as completed since all content has been generated
-    updates.status = STATUS.COMPLETED;
+    const extractedUiux = extractContentFromResponse(uiux, uiuxFormatStart);
+    updates.uiux = extractedUiux;
+    // Retry if response is bad
+    if (
+      isBadResponse(extractedUiux, uiuxFormatStart) &&
+      retries < MAX_RETRIES
+    ) {
+      updates.retries = retries + 1;
+      updates.uiux = LOADING;
+    } else {
+      // Mark as completed since all content has been generated
+      updates.status = STATUS.COMPLETED;
+    }
   }
 
   console.log("Updating: " + JSON.stringify(updates));
@@ -347,6 +418,17 @@ const extractContentFromResponse = (
   // Return original text if startText not found
   if (startIndex === -1) return responseText;
   return responseText.substring(startIndex);
+};
+
+const isBadResponse = (parsedText: string, startText: string): boolean => {
+  const startIndex = parsedText.indexOf(startText);
+  if (parsedText === ERROR_MESSAGE) {
+    return true;
+  }
+  const refuseToAnswerIndex = parsedText.indexOf(REFUSE_TO_ANSWER);
+  // limit bad responses to just those who refuse to answer for now
+  console.log("RETRYING FOR : " + startText);
+  return refuseToAnswerIndex !== -1 || startIndex === -1;
 };
 
 export const generateIdeaContentOnCreate = functions
@@ -407,7 +489,7 @@ export const generateNewIdeaImage = functions.https.onRequest(
     cors(req, res, async () => {
       const data = req.body;
       const userId = data.userId;
-      const ideaId = data.ideaId; // Fixed typo from ideadId to ideaId
+      const ideaId = data.ideaId;
 
       if (!userId || !ideaId) {
         res.status(400).send("Missing required data");
@@ -443,6 +525,51 @@ export const generateNewIdeaImage = functions.https.onRequest(
 
       res.status(200).send({
         message: `New image for Idea ${ideaId} was successfully generated`,
+      });
+    });
+  }
+);
+
+export const updateIdeaVisibility = functions.https.onRequest(
+  async (req, res) => {
+    cors(req, res, async () => {
+      const data = req.body;
+      const userId = data.userId;
+      const ideaId = data.ideaId;
+      const isPublic = data.isPublic;
+
+      if (!userId || !ideaId || isPublic === undefined) {
+        res.status(400).send("Missing required data");
+        return;
+      }
+
+      // Check if a user document already exists in Firestore
+      const userRef = admin.firestore().collection("users").doc(userId);
+      const userSnapshot = await userRef.get();
+
+      // Check if an idea document already exists in Firestore
+      const ideaRef = admin.firestore().collection("ideas").doc(ideaId);
+      const ideaSnapshot = await ideaRef.get();
+
+      if (!ideaSnapshot.exists || !userSnapshot.exists) {
+        res.status(400).send("User or Idea does not exist");
+        return;
+      }
+
+      const ideaData = ideaSnapshot.data()!;
+
+      // Check if the idea belongs to the user
+      if (ideaData.user_id !== userId) {
+        res.status(401).send("Unauthorized");
+        return;
+      }
+
+      await ideaRef.update({
+        isPublic: isPublic,
+      });
+
+      res.status(200).send({
+        message: `Updated Idea ${ideaId} visibility to ${isPublic}`,
       });
     });
   }
