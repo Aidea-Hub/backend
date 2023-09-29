@@ -21,16 +21,11 @@ import axios from "axios";
 
 const COST_TO_GENERATE_IDEAS = -5;
 
-const ALGO_1_URL = "https://us-central1-aidea-hub.cloudfunctions.net/generateIdea1";
-const ALGO_2_URL = "https://us-central1-aidea-hub.cloudfunctions.net/generateIdea2";
-const ALGO_3_URL = "https://us-central1-aidea-hub.cloudfunctions.net/generateIdea1";
-const ALGO_4_URL = "https://us-central1-aidea-hub.cloudfunctions.net/generateIdea2";
-
 const algoUrlMap: { [key: string]: string } = {
-  "algo1": ALGO_1_URL,
-  "algo2": ALGO_2_URL,
-  "algo3": ALGO_3_URL,
-  "algo4": ALGO_4_URL,
+  "algo1": process.env.ALGO_1_URL || "",
+  "algo2": process.env.ALGO_2_URL || "",
+  "algo3": process.env.ALGO_3_URL || "",
+  "algo4": process.env.ALGO_4_URL || "",
 }
 
 export const generateIdeas = functions.runWith({ timeoutSeconds: 300 }).https.onRequest(
