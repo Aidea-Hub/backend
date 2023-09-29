@@ -9,6 +9,7 @@ import {
   generateIdeaContentOnUpdate,
   updateIdeaVisibility,
 } from "./generateIdeaFunctions";
+import { generateIdeas } from "./generateIdeas";
 
 export {
   likeIdea,
@@ -18,6 +19,7 @@ export {
   scheduleDeleteDownvotedIdeas,
   generateIdeaContent,
   generateNewIdeaImage,
+  generateIdeas,
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
   updateIdeaVisibility,

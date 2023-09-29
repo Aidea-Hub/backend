@@ -5,7 +5,12 @@
 ```
 git clone https://github.com/Aidea-Hub/backend.git
 ```
-2. Create `.env` that point to [ai cloud functions](https://github.com/Aidea-Hub/ai-backend) in `backend/functions`
+2. Create `.env` that point to [ai cloud functions](https://github.com/Aidea-Hub/ai-backend) in `backend/functions` directory
+
+backend
+- functions
+-- .env
+-- ...other function files
 ```
 API_GENERATE_RESEARCH=
 API_GENERATE_REFLECTION=
