@@ -228,6 +228,7 @@ export const generateIdeaContent = functions
         title: title,
         url: url,
         user_id: userId,
+        isPublic: true,
         votes: 0,
       });
 
@@ -244,7 +245,6 @@ export const generateIdeaContent = functions
         description: description,
         status: STATUS.GENERATING,
         retries: 0,
-        isPublic: true,
         productCapabilities: LOADING,
         competitiveLandscape: LOADING,
         moat: LOADING,
