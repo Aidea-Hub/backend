@@ -5,6 +5,8 @@ import { scheduleDeleteDownvotedIdeas } from "./scheduledFunctions";
 import {
   generateIdeaContent,
   generateNewIdeaImage,
+  generateIdeaContentOnCreate,
+  generateIdeaContentOnUpdate,
 } from "./generateIdeaFunctions";
 import { generateIdeas } from "./generateIdeas";
 
@@ -17,4 +19,6 @@ export {
   generateIdeaContent,
   generateNewIdeaImage,
   generateIdeas,
+  generateIdeaContentOnCreate,
+  generateIdeaContentOnUpdate,
 };
