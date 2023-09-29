@@ -2,7 +2,7 @@ import * as functions from "firebase-functions";
 import admin from "firebase-admin";
 import { cors } from "./config";
 
-const CREDITS_TOP_UP = 1000
+const CREDITS_TOP_UP = 100
 
 export const topupCredits = functions.https.onRequest(async (req, res) => {
   cors(req, res, async () => {

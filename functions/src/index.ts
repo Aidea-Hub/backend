@@ -16,7 +16,7 @@ import {
   topupCredits
 } from "./topupFunctions";
 import {
-  createCheckoutSession
+  createCheckoutSession,
 } from "./stripeFunctions";
 
 export {
@@ -32,5 +32,5 @@ export {
   updateIdeaVisibility,
   subscribe,
   topupCredits,
-  createCheckoutSession
+  createCheckoutSession,
 };

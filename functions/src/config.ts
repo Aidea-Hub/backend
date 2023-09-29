@@ -5,6 +5,7 @@ admin.initializeApp();
 const allowedOrigins = [
   "http://localhost:3000",
   "https://aidea-hub.netlify.app",
+  "https://checkout.stripe.com"
 ];
 
 export const cors = corsLib({
