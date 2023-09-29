@@ -14,6 +14,9 @@ import{
 import {
   topupCredits
 } from "./topupFunctions";
+import {
+  createCheckoutSession
+} from "./stripeFunctions";
 
 export {
   likeIdea,
@@ -26,5 +29,6 @@ export {
   generateIdeaContentOnCreate,
   generateIdeaContentOnUpdate,
   subscribe,
-  topupCredits
+  topupCredits,
+  createCheckoutSession
 };
